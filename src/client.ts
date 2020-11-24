@@ -1,8 +1,11 @@
-import http from 'http';
+//import http from 'http';
 
 import { IntegrationProviderAuthenticationError } from '@jupiterone/integration-sdk-core';
 
 import { IntegrationConfig } from './types';
+
+import * as azdev from 'azure-devops-node-api';
+import * as cr from 'azure-devops-node-api/CoreApi';
 
 export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
@@ -47,8 +50,21 @@ export class APIClient {
     // TODO make the most light-weight request possible to validate
     // authentication works with the provided credentials, throw an err if
     // authentication fails
+
+    let testConnection = async function (connection) {
+      let core: cr.ICoreApi = await connection.getCoreApi();
+      let stuff = await core.getProjects();
+      console.log(stuff);
+    };
+
     const request = new Promise((resolve, reject) => {
-      http.get(
+      let authHandler = azdev.getPersonalAccessTokenHandler(
+        this.config.accessToken,
+      );
+      let connection = new azdev.WebApi(this.config.orgUrl, authHandler);
+      testConnection(connection);
+
+      /* http.get(
         {
           hostname: 'localhost',
           port: 443,
@@ -63,7 +79,7 @@ export class APIClient {
             resolve();
           }
         },
-      );
+      ); */
     });
 
     try {
@@ -71,7 +87,7 @@ export class APIClient {
     } catch (err) {
       throw new IntegrationProviderAuthenticationError({
         cause: err,
-        endpoint: 'https://localhost/api/v1/some/endpoint?limit=1',
+        endpoint: 'ADO API', //'https://localhost/api/v1/some/endpoint?limit=1',
         status: err.status,
         statusText: err.statusText,
       });
