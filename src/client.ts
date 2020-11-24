@@ -51,39 +51,14 @@ export class APIClient {
     // authentication works with the provided credentials, throw an err if
     // authentication fails
 
-    let testConnection = async function (connection) {
-      let core: cr.ICoreApi = await connection.getCoreApi();
-      let stuff = await core.getProjects();
-      console.log(stuff);
-    };
-
-    const request = new Promise((resolve, reject) => {
-      let authHandler = azdev.getPersonalAccessTokenHandler(
+    try {
+      const authHandler = azdev.getPersonalAccessTokenHandler(
         this.config.accessToken,
       );
-      let connection = new azdev.WebApi(this.config.orgUrl, authHandler);
-      testConnection(connection);
-
-      /* http.get(
-        {
-          hostname: 'localhost',
-          port: 443,
-          path: '/api/v1/some/endpoint?limit=1',
-          agent: false,
-          timeout: 10,
-        },
-        (res) => {
-          if (res.statusCode !== 200) {
-            reject(new Error('Provider authentication failed'));
-          } else {
-            resolve();
-          }
-        },
-      ); */
-    });
-
-    try {
-      await request;
+      const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
+      const core: cr.ICoreApi = await connection.getCoreApi();
+      const stuff = await core.getProjects();
+      console.log(stuff);
     } catch (err) {
       throw new IntegrationProviderAuthenticationError({
         cause: err,
