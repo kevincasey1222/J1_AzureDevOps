@@ -6,6 +6,8 @@ import {
 import { createAPIClient } from './client';
 import { IntegrationConfig } from './types';
 
+import { URL } from 'url';
+
 export default async function validateInvocation(
   context: IntegrationExecutionContext<IntegrationConfig>,
 ) {
@@ -16,6 +18,15 @@ export default async function validateInvocation(
       'Config requires all of {orgUrl, accessToken}',
     );
   }
+
+  try {
+    new URL(config.orgUrl);
+  } catch (err) {
+    throw new IntegrationValidationError(
+      'Invalid API URL: ' + config.orgUrl
+    );
+  }
+
 
   const apiClient = createAPIClient(config);
   await apiClient.verifyAuthentication();

@@ -4,12 +4,12 @@ import { IntegrationConfig } from '../types';
 import { fetchGroups, fetchUsers } from './access';
 import { fetchAccountDetails } from './account';
 
-const DEFAULT_CLIENT_ID = 'dummy-acme-client-id';
-const DEFAULT_CLIENT_SECRET = 'dummy-acme-client-secret';
+const DEFAULT_ORG_URL = 'dummy-acme-org-url';
+const DEFAULT_ACCESS_TOKEN = 'dummy-acme-access-token';
 
 const integrationConfig: IntegrationConfig = {
-  clientId: process.env.CLIENT_ID || DEFAULT_CLIENT_ID,
-  clientSecret: process.env.CLIENT_SECRET || DEFAULT_CLIENT_SECRET,
+  orgUrl: process.env.ORG_URL || DEFAULT_ORG_URL,
+  accessToken: process.env.ACCESS_TOKEN || DEFAULT_ACCESS_TOKEN,
 };
 
 test('should collect data', async () => {

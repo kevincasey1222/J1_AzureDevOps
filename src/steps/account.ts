@@ -6,42 +6,42 @@ import {
 
 import { IntegrationConfig } from '../types';
 
-export const ACCOUNT_ENTITY_KEY = 'entity:account';
+export const AZURE_DEVOPS_ACCOUNT = 'azure_devops_account';
 
 export async function fetchAccountDetails({
+  instance,
   jobState,
 }: IntegrationStepExecutionContext<IntegrationConfig>) {
+  const name = `Azure Devops - ${instance.name}`;
   const accountEntity = await jobState.addEntity(
     createIntegrationEntity({
       entityData: {
         source: {
-          id: 'acme-unique-account-id',
-          name: 'Example Co. Acme Account',
+          id: 'azure-devops',
+          name: 'Azure Devops Account',
         },
         assign: {
-          _key: 'acme-unique-account-id',
-          _type: 'acme_account',
+          _key: `azure-devops-account:${instance.id}`,
+          _type: 'azure_devops_account',
           _class: 'Account',
-          mfaEnabled: true,
-          // This is a custom property that is not a part of the data model class
-          // hierarchy. See: https://github.com/JupiterOne/data-model/blob/master/src/schemas/Account.json
-          manager: 'Manager Name',
+          name,
+          displayName: name
         },
       },
     }),
   );
 
-  await jobState.setData(ACCOUNT_ENTITY_KEY, accountEntity);
+  await jobState.setData(AZURE_DEVOPS_ACCOUNT, accountEntity);
 }
 
 export const accountSteps: IntegrationStep<IntegrationConfig>[] = [
   {
-    id: 'fetch-account',
-    name: 'Fetch Account Details',
+    id: 'azure-devops',
+    name: 'Azure Devops Account Details',
     entities: [
       {
-        resourceName: 'Account',
-        _type: 'acme_account',
+        resourceName: 'Azure Devops Account',
+        _type: AZURE_DEVOPS_ACCOUNT,
         _class: 'Account',
       },
     ],
