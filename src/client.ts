@@ -1,4 +1,3 @@
-//import http from 'http';
 
 import { IntegrationProviderAuthenticationError } from '@jupiterone/integration-sdk-core';
 
@@ -69,6 +68,54 @@ export class APIClient {
     }
   }
 
+/**
+   * Iterates each user resource in the provider.
+   *
+   * @param iteratee receives each resource to produce entities/relationships
+   */
+  public async iterateProjects(
+    iteratee: ResourceIteratee<AcmeUser>,
+  ): Promise<void> {
+    // TODO paginate an endpoint, invoke the iteratee with each record in the
+    // page
+    //
+    // The provider API will hopefully support pagination. Functions like this
+    // should maintain pagination state, and for each page, for each record in
+    // the page, invoke the `ResourceIteratee`. This will encourage a pattern
+    // where each resource is processed and dropped from memory.
+    try {
+      const authHandler = azdev.getPersonalAccessTokenHandler(
+        this.config.accessToken,
+      );
+      const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
+      const core: cr.ICoreApi = await connection.getCoreApi();
+      const projects = core.getProjects();
+      console.log(projects);
+    } catch (err) {
+      throw new IntegrationProviderAuthenticationError({
+        cause: err,
+        endpoint: 'ADO API', //'https://localhost/api/v1/some/endpoint?limit=1',
+        status: err.status,
+        statusText: err.statusText,
+      });
+    }
+    
+    const users: AcmeUser[] = [
+      {
+        id: 'acme-user-1',
+        name: 'User One',
+      },
+      {
+        id: 'acme-user-2',
+        name: 'User Two',
+      },
+    ];
+
+    for (const user of users) {
+      await iteratee(user);
+    }
+  }
+
   /**
    * Iterates each user resource in the provider.
    *
@@ -84,7 +131,23 @@ export class APIClient {
     // should maintain pagination state, and for each page, for each record in
     // the page, invoke the `ResourceIteratee`. This will encourage a pattern
     // where each resource is processed and dropped from memory.
-
+    try {
+      const authHandler = azdev.getPersonalAccessTokenHandler(
+        this.config.accessToken,
+      );
+      const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
+      const core: cr.ICoreApi = await connection.getCoreApi();
+      const stuff = core.getTeams('Initial project'); //todo add params here
+      console.log(stuff);
+    } catch (err) {
+      throw new IntegrationProviderAuthenticationError({
+        cause: err,
+        endpoint: 'ADO API', //'https://localhost/api/v1/some/endpoint?limit=1',
+        status: err.status,
+        statusText: err.statusText,
+      });
+    }
+    
     const users: AcmeUser[] = [
       {
         id: 'acme-user-1',

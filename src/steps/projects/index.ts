@@ -8,17 +8,17 @@ import {
   IntegrationMissingKeyError,
 } from '@jupiterone/integration-sdk-core';
 
-import { createAPIClient } from '../client';
-import { IntegrationConfig } from '../types';
-import { ACCOUNT_ENTITY_KEY } from './account';
+import { createAPIClient } from '../../client';
+import { IntegrationConfig } from '../../types';
+import { AZURE_DEVOPS_ACCOUNT } from '../account';
 
-export async function fetchUsers({
+export async function fetchProjects({
   instance,
   jobState,
 }: IntegrationStepExecutionContext<IntegrationConfig>) {
   const apiClient = createAPIClient(instance.config);
 
-  const accountEntity = (await jobState.getData(ACCOUNT_ENTITY_KEY)) as Entity;
+  const accountEntity = (await jobState.getData(AZURE_DEVOPS_ACCOUNT)) as Entity;
 
   await apiClient.iterateUsers(async (user) => {
     const userEntity = await jobState.addEntity(
@@ -101,7 +101,7 @@ export async function fetchGroups({
   });
 }
 
-export const accessSteps: IntegrationStep<IntegrationConfig>[] = [
+export const projectSteps: IntegrationStep<IntegrationConfig>[] = [
   {
     id: 'fetch-users',
     name: 'Fetch Users',
