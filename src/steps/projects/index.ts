@@ -30,11 +30,15 @@ export async function fetchProjects({
           assign: {
             _type: 'azure_devops_project',
             _class: 'Project',
-            projectname: project.name,
-            // email: 'test@test.com',
-            // This is a custom property that is not a part of the data model class
-            // hierarchy. See: https://github.com/JupiterOne/data-model/blob/master/src/schemas/User.json
-            //firstName: 'John',
+            adoid: project.id,
+            name: project.name,
+            displayName: project.name,
+            projectdescription: project.description,
+            url: project.url,
+            state: project.state,
+            revision: project.revision,
+            createdOn: undefined,
+            updatedOn: undefined,
           },
         },
       }),
@@ -69,7 +73,7 @@ export const projectSteps: IntegrationStep<ADOIntegrationConfig>[] = [
         targetType: 'azure_devops_project',
       },
     ],
-    dependsOn: [],
+    dependsOn: ['fetch-account'],
     executionHandler: fetchProjects,
   },
 ];

@@ -136,7 +136,7 @@ export const userSteps: IntegrationStep<ADOIntegrationConfig>[] = [
         targetType: 'acme_user',
       },
     ],
-    dependsOn: [],
+    dependsOn: ['fetch-account'],
     executionHandler: fetchUsers,
   },
 ];

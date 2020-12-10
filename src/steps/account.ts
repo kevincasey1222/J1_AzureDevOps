@@ -8,7 +8,7 @@ import { ADOIntegrationConfig } from '../types';
 
 export const AZURE_DEVOPS_ACCOUNT = 'azure_devops_account';
 
-export async function fetchAccount({
+export async function fetchAccountDetails({
   instance,
   jobState,
 }: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
@@ -35,8 +35,8 @@ export async function fetchAccount({
 
 export const accountSteps: IntegrationStep<ADOIntegrationConfig>[] = [
   {
-    id: 'azure-devops',
-    name: 'Azure Devops Account Details',
+    id: 'fetch-account',
+    name: 'Fetch Account Details',
     entities: [
       {
         resourceName: 'Azure Devops Account',
@@ -46,6 +46,6 @@ export const accountSteps: IntegrationStep<ADOIntegrationConfig>[] = [
     ],
     relationships: [],
     dependsOn: [],
-    executionHandler: fetchAccount,
+    executionHandler: fetchAccountDetails,
   },
 ];

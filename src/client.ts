@@ -1,10 +1,10 @@
-
 import { IntegrationProviderAuthenticationError } from '@jupiterone/integration-sdk-core';
 
 import { ADOIntegrationConfig } from './types';
 
 import * as azdev from 'azure-devops-node-api';
 import * as cr from 'azure-devops-node-api/CoreApi';
+import { TeamProjectReference } from 'azure-devops-node-api/interfaces/CoreInterfaces';
 
 export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
@@ -21,13 +21,12 @@ type ADOUser = {
 type ADOGroup = {
   id: string;
   name: string;
-  users?: Pick<ADOUser, 'id'>[]
+  users?: Pick<ADOUser, 'id'>[];
 };
 type ADOWorkitem = {
   id: string;
   name: string;
 };
-
 
 // Those can be useful to a degree, but often they're just full of optional
 // values. Understanding the response data may be more reliably accomplished by
@@ -54,7 +53,7 @@ export class APIClient {
   constructor(readonly config: ADOIntegrationConfig) {}
 
   public async verifyAuthentication(): Promise<void> {
-    // TODO make the most light-weight request possible to validate
+    // the most light-weight request possible to validate
     // authentication works with the provided credentials, throw an err if
     // authentication fails
 
@@ -63,9 +62,7 @@ export class APIClient {
         this.config.accessToken,
       );
       const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
-      const core: cr.ICoreApi = await connection.getCoreApi();
-      const stuff = await core.getProjects();
-      console.log(stuff);
+      await connection.getCoreApi(); //the authen will fail on this line is accessToken is bad
     } catch (err) {
       throw new IntegrationProviderAuthenticationError({
         cause: err,
@@ -82,7 +79,7 @@ export class APIClient {
    * @param iteratee receives each resource to produce entities/relationships
    */
   public async iterateProjects(
-    iteratee: ResourceIteratee<ADOProject>,
+    iteratee: ResourceIteratee<TeamProjectReference>,
   ): Promise<void> {
     // TODO paginate an endpoint, invoke the iteratee with each record in the
     // page
@@ -91,7 +88,7 @@ export class APIClient {
     // should maintain pagination state, and for each page, for each record in
     // the page, invoke the `ResourceIteratee`. This will encourage a pattern
     // where each resource is processed and dropped from memory.
-    const projects: ADOProject[] = [];
+    var projects: TeamProjectReference[] = [];
 
     try {
       const authHandler = azdev.getPersonalAccessTokenHandler(
@@ -99,8 +96,7 @@ export class APIClient {
       );
       const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
       const core: cr.ICoreApi = await connection.getCoreApi();
-      const projectsJSON = core.getProjects();
-      console.log(projectsJSON);
+      projects = await core.getProjects();
       //now load up projects array with ADOProject objects based on the JSON
     } catch (err) {
       throw new IntegrationProviderAuthenticationError({
@@ -147,7 +143,7 @@ export class APIClient {
         statusText: err.statusText,
       });
     }
-    
+
     const users: ADOUser[] = [
       {
         id: 'acme-user-1',
@@ -208,7 +204,7 @@ export class APIClient {
     // the page, invoke the `ResourceIteratee`. This will encourage a pattern
     // where each resource is processed and dropped from memory.
     const items: ADOWorkitem[] = [];
-  
+
     try {
       const authHandler = azdev.getPersonalAccessTokenHandler(
         this.config.accessToken,
@@ -226,12 +222,11 @@ export class APIClient {
         statusText: err.statusText,
       });
     }
-  
+
     for (const item of items) {
       await iteratee(item);
     }
   }
-
 }
 
 export function createAPIClient(config: ADOIntegrationConfig): APIClient {
