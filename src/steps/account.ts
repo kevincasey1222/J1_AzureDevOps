@@ -4,14 +4,14 @@ import {
   IntegrationStepExecutionContext,
 } from '@jupiterone/integration-sdk-core';
 
-import { IntegrationConfig } from '../types';
+import { ADOIntegrationConfig } from '../types';
 
 export const AZURE_DEVOPS_ACCOUNT = 'azure_devops_account';
 
-export async function fetchAccountDetails({
+export async function fetchAccount({
   instance,
   jobState,
-}: IntegrationStepExecutionContext<IntegrationConfig>) {
+}: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
   const name = `Azure Devops - ${instance.name}`;
   const accountEntity = await jobState.addEntity(
     createIntegrationEntity({
@@ -22,19 +22,18 @@ export async function fetchAccountDetails({
         },
         assign: {
           _key: `azure-devops-account:${instance.id}`,
-          _type: 'azure_devops_account',
+          _type: AZURE_DEVOPS_ACCOUNT,
           _class: 'Account',
           name,
-          displayName: name
+          displayName: name,
         },
       },
     }),
   );
-
   await jobState.setData(AZURE_DEVOPS_ACCOUNT, accountEntity);
 }
 
-export const accountSteps: IntegrationStep<IntegrationConfig>[] = [
+export const accountSteps: IntegrationStep<ADOIntegrationConfig>[] = [
   {
     id: 'azure-devops',
     name: 'Azure Devops Account Details',
@@ -47,6 +46,6 @@ export const accountSteps: IntegrationStep<IntegrationConfig>[] = [
     ],
     relationships: [],
     dependsOn: [],
-    executionHandler: fetchAccountDetails,
+    executionHandler: fetchAccount,
   },
 ];

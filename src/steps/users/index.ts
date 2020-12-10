@@ -18,7 +18,9 @@ export async function fetchUsers({
 }: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
   const apiClient = createAPIClient(instance.config);
 
-  const accountEntity = (await jobState.getData(AZURE_DEVOPS_ACCOUNT)) as Entity;
+  const accountEntity = (await jobState.getData(
+    AZURE_DEVOPS_ACCOUNT,
+  )) as Entity;
 
   await apiClient.iterateUsers(async (user) => {
     const userEntity = await jobState.addEntity(
@@ -54,7 +56,9 @@ export async function fetchGroups({
 }: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
   const apiClient = createAPIClient(instance.config);
 
-  const accountEntity = (await jobState.getData(AZURE_DEVOPS_ACCOUNT)) as Entity;
+  const accountEntity = (await jobState.getData(
+    AZURE_DEVOPS_ACCOUNT,
+  )) as Entity;
 
   await apiClient.iterateGroups(async (group) => {
     const groupEntity = await jobState.addEntity(
@@ -132,7 +136,7 @@ export const userSteps: IntegrationStep<ADOIntegrationConfig>[] = [
         targetType: 'acme_user',
       },
     ],
-    dependsOn: ['fetch-account'],
+    dependsOn: [],
     executionHandler: fetchUsers,
   },
 ];

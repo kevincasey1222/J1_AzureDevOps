@@ -18,7 +18,9 @@ export async function fetchProjects({
 }: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
   const apiClient = createAPIClient(instance.config);
 
-  const accountEntity = (await jobState.getData(AZURE_DEVOPS_ACCOUNT)) as Entity;
+  const accountEntity = (await jobState.getData(
+    AZURE_DEVOPS_ACCOUNT,
+  )) as Entity;
 
   await apiClient.iterateProjects(async (project) => {
     const projectEntity = await jobState.addEntity(
@@ -67,7 +69,7 @@ export const projectSteps: IntegrationStep<ADOIntegrationConfig>[] = [
         targetType: 'azure_devops_project',
       },
     ],
-    dependsOn: ['fetch-account'],
+    dependsOn: [],
     executionHandler: fetchProjects,
   },
 ];

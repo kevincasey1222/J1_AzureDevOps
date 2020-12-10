@@ -35,19 +35,21 @@ https://github.com/JupiterOne/sdk/blob/master/docs/integrations/development.md
 
 The following entities are created:
 
-| Resources | Entity `_type` | Entity `_class` |
-| --------- | -------------- | --------------- |
-| Account   | `acme_account` | `Account`       |
+| Resources            | Entity `_type`         | Entity `_class` |
+| -------------------- | ---------------------- | --------------- |
+| Account              | `acme_account`         | `Account`       |
+| Azure Devops Account | `azure_devops_account` | `Account`       |
 
 ### Relationships
 
 The following relationships are created/mapped:
 
-| Source Entity `_type` | Relationship `_class` | Target Entity `_type` |
-| --------------------- | --------------------- | --------------------- |
-| `acme_account`        | **HAS**               | `acme_user`           |
-| `acme_account`        | **HAS**               | `acme_group`          |
-| `acme_group`          | **HAS**               | `acme_user`           |
+| Source Entity `_type`  | Relationship `_class` | Target Entity `_type`  |
+| ---------------------- | --------------------- | ---------------------- |
+| `acme_account`         | **HAS**               | `acme_group`           |
+| `acme_account`         | **HAS**               | `acme_user`            |
+| `acme_group`           | **HAS**               | `acme_user`            |
+| `azure_devops_account` | **HAS**               | `azure_devops_project` |
 
 <!--
 ********************************************************************************
