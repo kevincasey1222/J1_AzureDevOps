@@ -88,7 +88,7 @@ export class APIClient {
     // should maintain pagination state, and for each page, for each record in
     // the page, invoke the `ResourceIteratee`. This will encourage a pattern
     // where each resource is processed and dropped from memory.
-    var projects: TeamProjectReference[] = [];
+    let projects: TeamProjectReference[] = [];
 
     try {
       const authHandler = azdev.getPersonalAccessTokenHandler(
