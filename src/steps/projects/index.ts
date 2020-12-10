@@ -5,34 +5,34 @@ import {
   IntegrationStep,
   IntegrationStepExecutionContext,
   RelationshipClass,
-  IntegrationMissingKeyError,
+  //IntegrationMissingKeyError,
 } from '@jupiterone/integration-sdk-core';
 
 import { createAPIClient } from '../../client';
-import { IntegrationConfig } from '../../types';
+import { ADOIntegrationConfig } from '../../types';
 import { AZURE_DEVOPS_ACCOUNT } from '../account';
 
 export async function fetchProjects({
   instance,
   jobState,
-}: IntegrationStepExecutionContext<IntegrationConfig>) {
+}: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
   const apiClient = createAPIClient(instance.config);
 
   const accountEntity = (await jobState.getData(AZURE_DEVOPS_ACCOUNT)) as Entity;
 
-  await apiClient.iterateUsers(async (user) => {
-    const userEntity = await jobState.addEntity(
+  await apiClient.iterateProjects(async (project) => {
+    const projectEntity = await jobState.addEntity(
       createIntegrationEntity({
         entityData: {
-          source: user,
+          source: project,
           assign: {
-            _type: 'acme_user',
-            _class: 'User',
-            username: 'testusername',
-            email: 'test@test.com',
+            _type: 'azure_devops_project',
+            _class: 'Project',
+            projectname: project.name,
+            // email: 'test@test.com',
             // This is a custom property that is not a part of the data model class
             // hierarchy. See: https://github.com/JupiterOne/data-model/blob/master/src/schemas/User.json
-            firstName: 'John',
+            //firstName: 'John',
           },
         },
       }),
@@ -42,97 +42,32 @@ export async function fetchProjects({
       createDirectRelationship({
         _class: RelationshipClass.HAS,
         from: accountEntity,
-        to: userEntity,
+        to: projectEntity,
       }),
     );
   });
 }
 
-export async function fetchGroups({
-  instance,
-  jobState,
-}: IntegrationStepExecutionContext<IntegrationConfig>) {
-  const apiClient = createAPIClient(instance.config);
-
-  const accountEntity = (await jobState.getData(ACCOUNT_ENTITY_KEY)) as Entity;
-
-  await apiClient.iterateGroups(async (group) => {
-    const groupEntity = await jobState.addEntity(
-      createIntegrationEntity({
-        entityData: {
-          source: group,
-          assign: {
-            _type: 'acme_group',
-            _class: 'UserGroup',
-            email: 'testgroup@test.com',
-            // This is a custom property that is not a part of the data model class
-            // hierarchy. See: https://github.com/JupiterOne/data-model/blob/master/src/schemas/UserGroup.json
-            logoLink: 'https://test.com/logo.png',
-          },
-        },
-      }),
-    );
-
-    await jobState.addRelationship(
-      createDirectRelationship({
-        _class: RelationshipClass.HAS,
-        from: accountEntity,
-        to: groupEntity,
-      }),
-    );
-
-    for (const user of group.users || []) {
-      const userEntity = await jobState.findEntity(user.id);
-
-      if (!userEntity) {
-        throw new IntegrationMissingKeyError(
-          `Expected user with key to exist (key=${user.id})`,
-        );
-      }
-
-      await jobState.addRelationship(
-        createDirectRelationship({
-          _class: RelationshipClass.HAS,
-          from: groupEntity,
-          to: userEntity,
-        }),
-      );
-    }
-  });
-}
-
-export const projectSteps: IntegrationStep<IntegrationConfig>[] = [
+export const projectSteps: IntegrationStep<ADOIntegrationConfig>[] = [
   {
-    id: 'fetch-users',
-    name: 'Fetch Users',
+    id: 'fetch-projects',
+    name: 'Fetch Projects',
     entities: [
       {
-        resourceName: 'Account',
-        _type: 'acme_account',
+        resourceName: 'ADO Account',
+        _type: 'azure_devops_account',
         _class: 'Account',
       },
     ],
     relationships: [
       {
-        _type: 'acme_account_has_user',
+        _type: 'azure_devops_account_has_project',
         _class: RelationshipClass.HAS,
-        sourceType: 'acme_account',
-        targetType: 'acme_user',
-      },
-      {
-        _type: 'acme_account_has_group',
-        _class: RelationshipClass.HAS,
-        sourceType: 'acme_account',
-        targetType: 'acme_group',
-      },
-      {
-        _type: 'acme_group_has_user',
-        _class: RelationshipClass.HAS,
-        sourceType: 'acme_group',
-        targetType: 'acme_user',
+        sourceType: 'azure_devops_account',
+        targetType: 'azure_devops_project',
       },
     ],
     dependsOn: ['fetch-account'],
-    executionHandler: fetchUsers,
+    executionHandler: fetchProjects,
   },
 ];

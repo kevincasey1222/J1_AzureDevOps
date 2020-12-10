@@ -4,12 +4,12 @@ import {
 } from '@jupiterone/integration-sdk-core';
 
 import { createAPIClient } from './client';
-import { IntegrationConfig } from './types';
+import { ADOIntegrationConfig } from './types';
 
 import { URL } from 'url';
 
 export default async function validateInvocation(
-  context: IntegrationExecutionContext<IntegrationConfig>,
+  context: IntegrationExecutionContext<ADOIntegrationConfig>,
 ) {
   const { config } = context.instance;
 

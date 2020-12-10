@@ -9,13 +9,13 @@ import {
 } from '@jupiterone/integration-sdk-core';
 
 import { createAPIClient } from '../../client';
-import { IntegrationConfig } from '../../types';
+import { ADOIntegrationConfig } from '../../types';
 import { AZURE_DEVOPS_ACCOUNT } from '../account';
 
-export async function fetchProjects({
+export async function fetchUsers({
   instance,
   jobState,
-}: IntegrationStepExecutionContext<IntegrationConfig>) {
+}: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
   const apiClient = createAPIClient(instance.config);
 
   const accountEntity = (await jobState.getData(AZURE_DEVOPS_ACCOUNT)) as Entity;
@@ -51,10 +51,10 @@ export async function fetchProjects({
 export async function fetchGroups({
   instance,
   jobState,
-}: IntegrationStepExecutionContext<IntegrationConfig>) {
+}: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
   const apiClient = createAPIClient(instance.config);
 
-  const accountEntity = (await jobState.getData(ACCOUNT_ENTITY_KEY)) as Entity;
+  const accountEntity = (await jobState.getData(AZURE_DEVOPS_ACCOUNT)) as Entity;
 
   await apiClient.iterateGroups(async (group) => {
     const groupEntity = await jobState.addEntity(
@@ -101,7 +101,7 @@ export async function fetchGroups({
   });
 }
 
-export const workitemSteps: IntegrationStep<IntegrationConfig>[] = [
+export const userSteps: IntegrationStep<ADOIntegrationConfig>[] = [
   {
     id: 'fetch-users',
     name: 'Fetch Users',

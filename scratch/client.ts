@@ -1,7 +1,7 @@
 
-import { IntegrationProviderAuthenticationError } from '@jupiterone/integration-sdk-core';
+//import { IntegrationProviderAuthenticationError } from '@jupiterone/integration-sdk-core';
 
-import { ADOIntegrationConfig } from './types';
+//import { IntegrationConfig } from '../src/types';
 
 import * as azdev from 'azure-devops-node-api';
 import * as cr from 'azure-devops-node-api/CoreApi';
@@ -10,24 +10,16 @@ export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
 // Providers often supply types with their API libraries.
 
-type ADOProject = {
-  id: string;
-  name: string;
-};
-type ADOUser = {
-  id: string;
-  name: string;
-};
-type ADOGroup = {
-  id: string;
-  name: string;
-  users?: Pick<ADOUser, 'id'>[]
-};
-type ADOWorkitem = {
+type AcmeUser = {
   id: string;
   name: string;
 };
 
+type AcmeGroup = {
+  id: string;
+  name: string;
+  users?: Pick<AcmeUser, 'id'>[];
+};
 
 // Those can be useful to a degree, but often they're just full of optional
 // values. Understanding the response data may be more reliably accomplished by
@@ -51,7 +43,7 @@ export type AcmeGroup = Opaque<any, 'AcmeGroup'>;
  * resources.
  */
 export class APIClient {
-  constructor(readonly config: ADOIntegrationConfig) {}
+  constructor(readonly config) {}
 
   public async verifyAuthentication(): Promise<void> {
     // TODO make the most light-weight request possible to validate
@@ -60,69 +52,42 @@ export class APIClient {
 
     try {
       const authHandler = azdev.getPersonalAccessTokenHandler(
-        this.config.accessToken,
+        String(this.config.accessToken),
       );
-      const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
+      const neededURL: string = String(this.config.orgUrl);
+      console.log('Got here step 1');
+      const connection = new azdev.WebApi(neededURL, authHandler);
+      console.log('Got here step 2');
+      console.log(await connection.connect());
+      console.log('Got here step 2.2');
+      const whynot = await connection.getBuildApi();
+      console.log(whynot.baseUrl);
+      console.log('Got here step 2.5');
       const core: cr.ICoreApi = await connection.getCoreApi();
+      console.log('Got here step 3');
       const stuff = await core.getProjects();
+      console.log('Got here step 4');
       console.log(stuff);
     } catch (err) {
+      console.log(err);
+      /*
       throw new IntegrationProviderAuthenticationError({
         cause: err,
         endpoint: 'ADO API', //'https://localhost/api/v1/some/endpoint?limit=1',
         status: err.status,
         statusText: err.statusText,
       });
+      */
     }
   }
 
-  /**
-   * Iterates each user resource in the provider.
-   *
-   * @param iteratee receives each resource to produce entities/relationships
-   */
-  public async iterateProjects(
-    iteratee: ResourceIteratee<ADOProject>,
-  ): Promise<void> {
-    // TODO paginate an endpoint, invoke the iteratee with each record in the
-    // page
-    //
-    // The provider API will hopefully support pagination. Functions like this
-    // should maintain pagination state, and for each page, for each record in
-    // the page, invoke the `ResourceIteratee`. This will encourage a pattern
-    // where each resource is processed and dropped from memory.
-    const projects: ADOProject[] = [];
-
-    try {
-      const authHandler = azdev.getPersonalAccessTokenHandler(
-        this.config.accessToken,
-      );
-      const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
-      const core: cr.ICoreApi = await connection.getCoreApi();
-      const projectsJSON = core.getProjects();
-      console.log(projectsJSON);
-      //now load up projects array with ADOProject objects based on the JSON
-    } catch (err) {
-      throw new IntegrationProviderAuthenticationError({
-        cause: err,
-        endpoint: 'ADO API', //'https://localhost/api/v1/some/endpoint?limit=1',
-        status: err.status,
-        statusText: err.statusText,
-      });
-    }
-
-    for (const proj of projects) {
-      await iteratee(proj);
-    }
-  }
-
-  /**
+    /**
    * Iterates each user resource in the provider.
    *
    * @param iteratee receives each resource to produce entities/relationships
    */
   public async iterateUsers(
-    iteratee: ResourceIteratee<ADOUser>,
+    iteratee: ResourceIteratee<AcmeUser>,
   ): Promise<void> {
     // TODO paginate an endpoint, invoke the iteratee with each record in the
     // page
@@ -137,18 +102,21 @@ export class APIClient {
       );
       const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
       const core: cr.ICoreApi = await connection.getCoreApi();
-      const stuff = core.getTeams('Initial project'); //todo add params here
+      const stuff = core.getTeams('Initial Project'); //todo add params here
       console.log(stuff);
     } catch (err) {
+      console.log(err);
+      /*
       throw new IntegrationProviderAuthenticationError({
         cause: err,
         endpoint: 'ADO API', //'https://localhost/api/v1/some/endpoint?limit=1',
         status: err.status,
         statusText: err.statusText,
       });
+      */
     }
     
-    const users: ADOUser[] = [
+    const users: AcmeUser[] = [
       {
         id: 'acme-user-1',
         name: 'User One',
@@ -170,7 +138,7 @@ export class APIClient {
    * @param iteratee receives each resource to produce entities/relationships
    */
   public async iterateGroups(
-    iteratee: ResourceIteratee<ADOGroup>,
+    iteratee: ResourceIteratee<AcmeGroup>,
   ): Promise<void> {
     // TODO paginate an endpoint, invoke the iteratee with each record in the
     // page
@@ -180,7 +148,7 @@ export class APIClient {
     // the page, invoke the `ResourceIteratee`. This will encourage a pattern
     // where each resource is processed and dropped from memory.
 
-    const groups: ADOGroup[] = [
+    const groups: AcmeGroup[] = [
       {
         id: 'acme-group-1',
         name: 'Group One',
@@ -196,44 +164,8 @@ export class APIClient {
       await iteratee(group);
     }
   }
-
-  public async iterateWorkitems(
-    iteratee: ResourceIteratee<ADOWorkitem>,
-  ): Promise<void> {
-    // TODO paginate an endpoint, invoke the iteratee with each record in the
-    // page
-    //
-    // The provider API will hopefully support pagination. Functions like this
-    // should maintain pagination state, and for each page, for each record in
-    // the page, invoke the `ResourceIteratee`. This will encourage a pattern
-    // where each resource is processed and dropped from memory.
-    const items: ADOWorkitem[] = [];
-  
-    try {
-      const authHandler = azdev.getPersonalAccessTokenHandler(
-        this.config.accessToken,
-      );
-      const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
-      const core: cr.ICoreApi = await connection.getCoreApi();
-      const projectsJSON = core.getProjects();
-      console.log(projectsJSON);
-      //now load up projects array with ADOProject objects based on the JSON
-    } catch (err) {
-      throw new IntegrationProviderAuthenticationError({
-        cause: err,
-        endpoint: 'ADO API', //'https://localhost/api/v1/some/endpoint?limit=1',
-        status: err.status,
-        statusText: err.statusText,
-      });
-    }
-  
-    for (const item of items) {
-      await iteratee(item);
-    }
-  }
-
 }
 
-export function createAPIClient(config: ADOIntegrationConfig): APIClient {
+export function createAPIClient(config): APIClient {
   return new APIClient(config);
 }
