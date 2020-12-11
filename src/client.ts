@@ -4,25 +4,17 @@ import { ADOIntegrationConfig } from './types';
 
 import * as azdev from 'azure-devops-node-api';
 import * as cr from 'azure-devops-node-api/CoreApi';
-import { TeamProjectReference } from 'azure-devops-node-api/interfaces/CoreInterfaces';
+import { TeamProjectReference, WebApiTeam } from 'azure-devops-node-api/interfaces/CoreInterfaces';
+import { TeamMember } from 'azure-devops-node-api/interfaces/common/VSSInterfaces';
 
 export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
-// Providers often supply types with their API libraries.
-
-type ADOProject = {
-  id: string;
-  name: string;
-};
 type ADOUser = {
   id: string;
-  name: string;
-};
-type ADOGroup = {
-  id: string;
-  name: string;
-  users?: Pick<ADOUser, 'id'>[];
-};
+}
+interface ADOGroup extends WebApiTeam {
+  users?: ADOUser[],
+}
 type ADOWorkitem = {
   id: string;
   name: string;
@@ -81,13 +73,7 @@ export class APIClient {
   public async iterateProjects(
     iteratee: ResourceIteratee<TeamProjectReference>,
   ): Promise<void> {
-    // TODO paginate an endpoint, invoke the iteratee with each record in the
-    // page
-    //
-    // The provider API will hopefully support pagination. Functions like this
-    // should maintain pagination state, and for each page, for each record in
-    // the page, invoke the `ResourceIteratee`. This will encourage a pattern
-    // where each resource is processed and dropped from memory.
+
     let projects: TeamProjectReference[] = [];
 
     try {
@@ -97,7 +83,6 @@ export class APIClient {
       const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
       const core: cr.ICoreApi = await connection.getCoreApi();
       projects = await core.getProjects();
-      //now load up projects array with ADOProject objects based on the JSON
     } catch (err) {
       throw new IntegrationProviderAuthenticationError({
         cause: err,
@@ -118,23 +103,28 @@ export class APIClient {
    * @param iteratee receives each resource to produce entities/relationships
    */
   public async iterateUsers(
-    iteratee: ResourceIteratee<ADOUser>,
+    iteratee: ResourceIteratee<TeamMember>,
   ): Promise<void> {
-    // TODO paginate an endpoint, invoke the iteratee with each record in the
-    // page
-    //
-    // The provider API will hopefully support pagination. Functions like this
-    // should maintain pagination state, and for each page, for each record in
-    // the page, invoke the `ResourceIteratee`. This will encourage a pattern
-    // where each resource is processed and dropped from memory.
+
+    let users: TeamMember[] = [];
+
     try {
       const authHandler = azdev.getPersonalAccessTokenHandler(
         this.config.accessToken,
       );
       const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
       const core: cr.ICoreApi = await connection.getCoreApi();
-      const stuff = core.getTeams('Initial project'); //todo add params here
-      console.log(stuff);
+      const allTeams = await core.getAllTeams();
+      for (const team of allTeams) {
+        if ((team.projectId != undefined) && (team.id != undefined)) {
+          const teamMembers = await core.getTeamMembersWithExtendedProperties(team.projectId, team.id);
+          for (const teamMember of teamMembers) { 
+            if (!(users.map(x => x.identity?.id).includes(teamMember.identity?.id))) {
+              users.push(teamMember);
+            }
+          }
+        }
+      }
     } catch (err) {
       throw new IntegrationProviderAuthenticationError({
         cause: err,
@@ -143,17 +133,6 @@ export class APIClient {
         statusText: err.statusText,
       });
     }
-
-    const users: ADOUser[] = [
-      {
-        id: 'acme-user-1',
-        name: 'User One',
-      },
-      {
-        id: 'acme-user-2',
-        name: 'User Two',
-      },
-    ];
 
     for (const user of users) {
       await iteratee(user);
@@ -168,16 +147,39 @@ export class APIClient {
   public async iterateGroups(
     iteratee: ResourceIteratee<ADOGroup>,
   ): Promise<void> {
-    // TODO paginate an endpoint, invoke the iteratee with each record in the
-    // page
-    //
-    // The provider API will hopefully support pagination. Functions like this
-    // should maintain pagination state, and for each page, for each record in
-    // the page, invoke the `ResourceIteratee`. This will encourage a pattern
-    // where each resource is processed and dropped from memory.
 
-    const groups: ADOGroup[] = [
-      {
+    let groups: ADOGroup[] = [];
+
+    try {
+      const authHandler = azdev.getPersonalAccessTokenHandler(
+        this.config.accessToken,
+      );
+      const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
+      const core: cr.ICoreApi = await connection.getCoreApi();
+      const allTeams = await core.getAllTeams();
+      for (const team of allTeams) {
+        if ((team.projectId != undefined) && (team.id != undefined)) {
+          const group: ADOGroup = team;
+          group.users = [];
+          const teamMembers = await core.getTeamMembersWithExtendedProperties(team.projectId, team.id);
+          for (const teamMember of teamMembers) { 
+            if (teamMember.identity?.id != undefined) {
+              const userId = { id: teamMember.identity?.id } ;
+              group.users.push(userId);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      throw new IntegrationProviderAuthenticationError({
+        cause: err,
+        endpoint: 'ADO API', //'https://localhost/api/v1/some/endpoint?limit=1',
+        status: err.status,
+        statusText: err.statusText,
+      });
+    }
+    
+     /* {
         id: 'acme-group-1',
         name: 'Group One',
         users: [
@@ -186,7 +188,7 @@ export class APIClient {
           },
         ],
       },
-    ];
+    ];*/
 
     for (const group of groups) {
       await iteratee(group);

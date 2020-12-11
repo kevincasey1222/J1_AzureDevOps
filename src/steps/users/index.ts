@@ -7,6 +7,7 @@ import {
   RelationshipClass,
   IntegrationMissingKeyError,
 } from '@jupiterone/integration-sdk-core';
+//import { ResultGroupType } from 'azure-devops-node-api/interfaces/TestInterfaces';
 
 import { createAPIClient } from '../../client';
 import { ADOIntegrationConfig } from '../../types';
@@ -28,13 +29,17 @@ export async function fetchUsers({
         entityData: {
           source: user,
           assign: {
-            _type: 'acme_user',
+            _type: 'azure_devops_user',
             _class: 'User',
-            username: 'testusername',
-            email: 'test@test.com',
-            // This is a custom property that is not a part of the data model class
-            // hierarchy. See: https://github.com/JupiterOne/data-model/blob/master/src/schemas/User.json
-            firstName: 'John',
+            _key: user.identity?.id,
+            name: user.identity?.displayName,
+            displayName: user.identity?.displayName,
+            email: user.identity?.uniqueName,
+            username: user.identity?.uniqueName,
+            webLink: user.identity?.url,
+            imageLink: user.identity?.imageUrl,
+            descriptor: user.identity?.descriptor,
+            profileLink: user.identity?.profileUrl
           },
         },
       }),
@@ -66,12 +71,16 @@ export async function fetchGroups({
         entityData: {
           source: group,
           assign: {
-            _type: 'acme_group',
+            _type: 'azure_devops_team',
             _class: 'UserGroup',
-            email: 'testgroup@test.com',
-            // This is a custom property that is not a part of the data model class
-            // hierarchy. See: https://github.com/JupiterOne/data-model/blob/master/src/schemas/UserGroup.json
-            logoLink: 'https://test.com/logo.png',
+            _key: group.id,
+            name: group.name,
+            displayName: group.name,
+            webLink: group.url,
+            description: group.description,
+            identityUrl: group.identityUrl,
+            projectName: group.projectName,
+            projectId: group.projectId,
           },
         },
       }),
@@ -102,6 +111,23 @@ export async function fetchGroups({
         }),
       );
     }
+
+    if (group.projectId != undefined) {
+      const projectEntity = await jobState.findEntity(group.projectId);
+      if (!projectEntity) {
+        throw new IntegrationMissingKeyError(
+          `Expected project with key to exist (key=${group.projectId})`,
+        );
+      }
+      await jobState.addRelationship(
+        createDirectRelationship({
+          _class: RelationshipClass.HAS,
+          from: projectEntity,
+          to: groupEntity,
+        }),
+      );
+    }
+    
   });
 }
 
@@ -111,32 +137,74 @@ export const userSteps: IntegrationStep<ADOIntegrationConfig>[] = [
     name: 'Fetch Users',
     entities: [
       {
-        resourceName: 'Account',
-        _type: 'acme_account',
-        _class: 'Account',
+        resourceName: 'ADO User',
+        _type: 'azure_devops_user',
+        _class: 'User',
       },
     ],
     relationships: [
       {
-        _type: 'acme_account_has_user',
+        _type: 'azure_devops_account_has_user',
         _class: RelationshipClass.HAS,
-        sourceType: 'acme_account',
-        targetType: 'acme_user',
+        sourceType: 'azure_devops_account',
+        targetType: 'azure_devops_user',
       },
       {
-        _type: 'acme_account_has_group',
+        _type: 'azure_devops_project_has_team',
         _class: RelationshipClass.HAS,
-        sourceType: 'acme_account',
-        targetType: 'acme_group',
+        sourceType: 'azure_devops_project',
+        targetType: 'azure_devops_team',
       },
       {
-        _type: 'acme_group_has_user',
+        _type: 'azure_devops_account_has_team',
         _class: RelationshipClass.HAS,
-        sourceType: 'acme_group',
-        targetType: 'acme_user',
+        sourceType: 'azure_devops_account',
+        targetType: 'azure_devops_team',
+      },
+      {
+        _type: 'azure_devops_team_has_user',
+        _class: RelationshipClass.HAS,
+        sourceType: 'azure_devops_team',
+        targetType: 'azure_devops_user',
       },
     ],
-    dependsOn: ['fetch-account'],
+    dependsOn: ['fetch-projects'],
     executionHandler: fetchUsers,
+  },
+];
+
+export const groupSteps: IntegrationStep<ADOIntegrationConfig>[] = [
+  {
+    id: 'fetch-groups',
+    name: 'Fetch Groups',
+    entities: [
+      {
+        resourceName: 'ADO Team',
+        _type: 'azure_devops_team',
+        _class: 'UserGroup',
+      },
+    ],
+    relationships: [
+      {
+        _type: 'azure_devops_project_has_team',
+        _class: RelationshipClass.HAS,
+        sourceType: 'azure_devops_project',
+        targetType: 'azure_devops_team',
+      },
+      {
+        _type: 'azure_devops_account_has_team',
+        _class: RelationshipClass.HAS,
+        sourceType: 'azure_devops_account',
+        targetType: 'azure_devops_team',
+      },
+      {
+        _type: 'azure_devops_team_has_user',
+        _class: RelationshipClass.HAS,
+        sourceType: 'azure_devops_team',
+        targetType: 'azure_devops_user',
+      },
+    ],
+    dependsOn: ['fetch-users'],
+    executionHandler: fetchGroups,
   },
 ];
