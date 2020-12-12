@@ -4,16 +4,19 @@ import { ADOIntegrationConfig } from './types';
 
 import * as azdev from 'azure-devops-node-api';
 import * as cr from 'azure-devops-node-api/CoreApi';
-import { TeamProjectReference, WebApiTeam } from 'azure-devops-node-api/interfaces/CoreInterfaces';
+import {
+  TeamProjectReference,
+  WebApiTeam,
+} from 'azure-devops-node-api/interfaces/CoreInterfaces';
 import { TeamMember } from 'azure-devops-node-api/interfaces/common/VSSInterfaces';
 
 export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
 type ADOUser = {
   id: string;
-}
+};
 interface ADOGroup extends WebApiTeam {
-  users?: ADOUser[],
+  users?: ADOUser[];
 }
 type ADOWorkitem = {
   id: string;
@@ -73,7 +76,6 @@ export class APIClient {
   public async iterateProjects(
     iteratee: ResourceIteratee<TeamProjectReference>,
   ): Promise<void> {
-
     let projects: TeamProjectReference[] = [];
 
     try {
@@ -105,7 +107,6 @@ export class APIClient {
   public async iterateUsers(
     iteratee: ResourceIteratee<TeamMember>,
   ): Promise<void> {
-
     let users: TeamMember[] = [];
 
     try {
@@ -116,10 +117,17 @@ export class APIClient {
       const core: cr.ICoreApi = await connection.getCoreApi();
       const allTeams = await core.getAllTeams();
       for (const team of allTeams) {
-        if ((team.projectId != undefined) && (team.id != undefined)) {
-          const teamMembers = await core.getTeamMembersWithExtendedProperties(team.projectId, team.id);
-          for (const teamMember of teamMembers) { 
-            if (!(users.map(x => x.identity?.id).includes(teamMember.identity?.id))) {
+        if (team.projectId != undefined && team.id != undefined) {
+          const teamMembers = await core.getTeamMembersWithExtendedProperties(
+            team.projectId,
+            team.id,
+          );
+          for (const teamMember of teamMembers) {
+            if (
+              !users
+                .map((x) => x.identity?.id)
+                .includes(teamMember.identity?.id)
+            ) {
               users.push(teamMember);
             }
           }
@@ -147,7 +155,6 @@ export class APIClient {
   public async iterateGroups(
     iteratee: ResourceIteratee<ADOGroup>,
   ): Promise<void> {
-
     let groups: ADOGroup[] = [];
 
     try {
@@ -158,16 +165,20 @@ export class APIClient {
       const core: cr.ICoreApi = await connection.getCoreApi();
       const allTeams = await core.getAllTeams();
       for (const team of allTeams) {
-        if ((team.projectId != undefined) && (team.id != undefined)) {
+        if (team.projectId != undefined && team.id != undefined) {
           const group: ADOGroup = team;
           group.users = [];
-          const teamMembers = await core.getTeamMembersWithExtendedProperties(team.projectId, team.id);
-          for (const teamMember of teamMembers) { 
+          const teamMembers = await core.getTeamMembersWithExtendedProperties(
+            team.projectId,
+            team.id,
+          );
+          for (const teamMember of teamMembers) {
             if (teamMember.identity?.id != undefined) {
-              const userId = { id: teamMember.identity?.id } ;
+              const userId = { id: teamMember.identity?.id };
               group.users.push(userId);
             }
           }
+          groups.push(group);
         }
       }
     } catch (err) {
@@ -178,8 +189,8 @@ export class APIClient {
         statusText: err.statusText,
       });
     }
-    
-     /* {
+
+    /* {
         id: 'acme-group-1',
         name: 'Group One',
         users: [

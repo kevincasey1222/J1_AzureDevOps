@@ -37,6 +37,7 @@ The following entities are created:
 
 | Resources            | Entity `_type`         | Entity `_class` |
 | -------------------- | ---------------------- | --------------- |
+| ADO Team             | `azure_devops_team`    | `UserGroup`     |
 | Account              | `acme_account`         | `Account`       |
 | Azure Devops Account | `azure_devops_account` | `Account`       |
 
@@ -50,6 +51,9 @@ The following relationships are created/mapped:
 | `acme_account`         | **HAS**               | `acme_user`            |
 | `acme_group`           | **HAS**               | `acme_user`            |
 | `azure_devops_account` | **HAS**               | `azure_devops_project` |
+| `azure_devops_account` | **HAS**               | `azure_devops_team`    |
+| `azure_devops_project` | **HAS**               | `azure_devops_team`    |
+| `azure_devops_team`    | **HAS**               | `azure_devops_user`    |
 
 <!--
 ********************************************************************************
