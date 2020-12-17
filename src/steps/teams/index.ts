@@ -85,7 +85,6 @@ export async function fetchTeams({
         }),
       );
     }
-    
   });
 }
 
@@ -120,7 +119,7 @@ export const teamSteps: IntegrationStep<ADOIntegrationConfig>[] = [
         targetType: 'azure_devops_user',
       },
     ],
-    dependsOn: ['fetch-users'],
+    dependsOn: ['fetch-users', 'fetch-projects'],
     executionHandler: fetchTeams,
   },
 ];

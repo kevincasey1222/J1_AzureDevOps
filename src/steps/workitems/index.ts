@@ -10,95 +10,63 @@ import {
 
 import { createAPIClient } from '../../client';
 import { ADOIntegrationConfig } from '../../types';
-import { AZURE_DEVOPS_ACCOUNT } from '../account';
 
-export async function fetchUsers({
+export async function fetchWorkitems({
   instance,
   jobState,
 }: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
   const apiClient = createAPIClient(instance.config);
 
-  const accountEntity = (await jobState.getData(
-    AZURE_DEVOPS_ACCOUNT,
-  )) as Entity;
-
-  await apiClient.iterateUsers(async (user) => {
-    const userEntity = await jobState.addEntity(
+  await apiClient.iterateWorkitems(async (item) => {
+    const workItemEntity = await jobState.addEntity(
       createIntegrationEntity({
         entityData: {
-          source: user,
+          source: item,
           assign: {
-            _type: 'acme_user',
-            _class: 'User',
-            username: 'testusername',
-            email: 'test@test.com',
-            // This is a custom property that is not a part of the data model class
-            // hierarchy. See: https://github.com/JupiterOne/data-model/blob/master/src/schemas/User.json
-            firstName: 'John',
+            _type: 'azure_devops_work_item',
+            _class: 'Record',
+            _key: (item.projectId || '') + item.id?.toString(),
+            name: (item.fields || {})['System.Title'],
+            displayName: (item.fields || {})['System.Title'],
+            type: (item.fields || {})['System.WorkItemType'],
+            webLink: item.url,
+            workItemType: (item.fields || {})['System.WorkItemType'],
+            description: (item.fields || {})['System.Description'],
+            projectId: item.projectId,
+            projectName: (item.fields || {})['System.TeamProject'],
+            teamProject: (item.fields || {})['System.TeamProject'],
+            revision: item.rev,
+            areaPath: (item.fields || {})['System.AreaPath'],
+            interationPath: (item.fields || {})['System.IterationPath'],
+            state: (item.fields || {})['System.State'],
+            reason: (item.fields || {})['System.Reason'],
+            createdDate: (item.fields || {})['System.CreatedDate'],
+            createdBy: (item.fields || {})['System.CreatedBy'],
+            changedDate: (item.fields || {})['System.ChangedDate'],
+            changedBy: (item.fields || {})['System.ChangedBy'],
+            commentCount: (item.fields || {})['System.CommentCount'],
+            stateChangeDate: (item.fields || {})[
+              'Microsoft.VSTS.Common.StateChangeDate'
+            ],
+            priority: (item.fields || {})['Microsoft.VSTS.Common.Priority'],
+            history: (item.fields || {})['System.History'],
           },
         },
       }),
     );
 
-    await jobState.addRelationship(
-      createDirectRelationship({
-        _class: RelationshipClass.HAS,
-        from: accountEntity,
-        to: userEntity,
-      }),
-    );
-  });
-}
-
-export async function fetchGroups({
-  instance,
-  jobState,
-}: IntegrationStepExecutionContext<ADOIntegrationConfig>) {
-  const apiClient = createAPIClient(instance.config);
-
-  const accountEntity = (await jobState.getData(
-    AZURE_DEVOPS_ACCOUNT,
-  )) as Entity;
-
-  await apiClient.iterateGroups(async (group) => {
-    const groupEntity = await jobState.addEntity(
-      createIntegrationEntity({
-        entityData: {
-          source: group,
-          assign: {
-            _type: 'acme_group',
-            _class: 'UserGroup',
-            email: 'testgroup@test.com',
-            // This is a custom property that is not a part of the data model class
-            // hierarchy. See: https://github.com/JupiterOne/data-model/blob/master/src/schemas/UserGroup.json
-            logoLink: 'https://test.com/logo.png',
-          },
-        },
-      }),
-    );
-
-    await jobState.addRelationship(
-      createDirectRelationship({
-        _class: RelationshipClass.HAS,
-        from: accountEntity,
-        to: groupEntity,
-      }),
-    );
-
-    for (const user of group.users || []) {
-      const userEntity = await jobState.findEntity(user.id);
-
-      if (!userEntity) {
+    if (item.projectId != undefined) {
+      const projectEntity = await jobState.findEntity(item.projectId);
+      if (!projectEntity) {
         throw new IntegrationMissingKeyError(
-          `Expected user with key to exist (key=${user.id})`,
+          `Expected project with key to exist (key=${item.projectId})`,
         );
       }
-
       await jobState.addRelationship(
         createDirectRelationship({
           _class: RelationshipClass.HAS,
-          from: groupEntity,
-          to: userEntity,
+          from: projectEntity,
+          to: workItemEntity,
         }),
       );
     }
@@ -107,36 +75,24 @@ export async function fetchGroups({
 
 export const workitemSteps: IntegrationStep<ADOIntegrationConfig>[] = [
   {
-    id: 'fetch-users',
-    name: 'Fetch Users',
+    id: 'fetch-workitems',
+    name: 'Fetch Workitems',
     entities: [
       {
-        resourceName: 'Account',
-        _type: 'acme_account',
-        _class: 'Account',
+        resourceName: 'ADO WorkItem',
+        _type: 'azure_devops_work_item',
+        _class: 'Record',
       },
     ],
     relationships: [
       {
-        _type: 'acme_account_has_user',
+        _type: 'azure_devops_project_has_work_item',
         _class: RelationshipClass.HAS,
-        sourceType: 'acme_account',
-        targetType: 'acme_user',
-      },
-      {
-        _type: 'acme_account_has_group',
-        _class: RelationshipClass.HAS,
-        sourceType: 'acme_account',
-        targetType: 'acme_group',
-      },
-      {
-        _type: 'acme_group_has_user',
-        _class: RelationshipClass.HAS,
-        sourceType: 'acme_group',
-        targetType: 'acme_user',
+        sourceType: 'azure_devops_project',
+        targetType: 'azure_devops_work_item',
       },
     ],
-    dependsOn: ['fetch-account'],
-    executionHandler: fetchUsers,
+    dependsOn: ['fetch-projects'],
+    executionHandler: fetchWorkitems,
   },
 ];

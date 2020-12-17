@@ -9,6 +9,8 @@ import {
   WebApiTeam,
 } from 'azure-devops-node-api/interfaces/CoreInterfaces';
 import { TeamMember } from 'azure-devops-node-api/interfaces/common/VSSInterfaces';
+//import { WorkItemTrackingProcessApi } from 'azure-devops-node-api/WorkItemTrackingProcessApi';
+import { WorkItem } from 'azure-devops-node-api/interfaces/WorkItemTrackingInterfaces';
 
 export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
@@ -18,10 +20,9 @@ type ADOUser = {
 interface ADOGroup extends WebApiTeam {
   users?: ADOUser[];
 }
-type ADOWorkitem = {
-  id: string;
-  name: string;
-};
+interface ADOWorkItem extends WorkItem {
+  projectId?: string;
+}
 
 // Those can be useful to a degree, but often they're just full of optional
 // values. Understanding the response data may be more reliably accomplished by
@@ -190,33 +191,16 @@ export class APIClient {
       });
     }
 
-    /* {
-        id: 'acme-group-1',
-        name: 'Group One',
-        users: [
-          {
-            id: 'acme-user-1',
-          },
-        ],
-      },
-    ];*/
-
     for (const group of groups) {
       await iteratee(group);
     }
   }
 
   public async iterateWorkitems(
-    iteratee: ResourceIteratee<ADOWorkitem>,
+    iteratee: ResourceIteratee<ADOWorkItem>,
   ): Promise<void> {
-    // TODO paginate an endpoint, invoke the iteratee with each record in the
-    // page
-    //
-    // The provider API will hopefully support pagination. Functions like this
-    // should maintain pagination state, and for each page, for each record in
-    // the page, invoke the `ResourceIteratee`. This will encourage a pattern
-    // where each resource is processed and dropped from memory.
-    const items: ADOWorkitem[] = [];
+    let workitems: ADOWorkItem[] = [];
+    let projects: TeamProjectReference[] = [];
 
     try {
       const authHandler = azdev.getPersonalAccessTokenHandler(
@@ -224,9 +208,23 @@ export class APIClient {
       );
       const connection = new azdev.WebApi(this.config.orgUrl, authHandler);
       const core: cr.ICoreApi = await connection.getCoreApi();
-      const projectsJSON = core.getProjects();
-      console.log(projectsJSON);
-      //now load up projects array with ADOProject objects based on the JSON
+      projects = await core.getProjects();
+      const witracker = await connection.getWorkItemTrackingApi();
+      for (const project of projects) {
+        //TODO: find the right way to get workitem IDs per project
+        let workItemIds: number[] = [];
+        let currentProjectWorkitems: WorkItem[] = [];
+        if (project.id == 'd5ec9e77-afa6-45c9-a2a5-2e015714f4fa') {
+          workItemIds = [1, 2];
+          currentProjectWorkitems = await witracker.getWorkItems(workItemIds);
+          for (const workitem of currentProjectWorkitems) {
+            const adoWorkItem: ADOWorkItem = workitem;
+            adoWorkItem.projectId = project.id;
+            workitems.push(adoWorkItem);
+          }
+        }
+        // end TODO
+      }
     } catch (err) {
       throw new IntegrationProviderAuthenticationError({
         cause: err,
@@ -236,7 +234,7 @@ export class APIClient {
       });
     }
 
-    for (const item of items) {
+    for (const item of workitems) {
       await iteratee(item);
     }
   }

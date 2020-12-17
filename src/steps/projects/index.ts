@@ -62,9 +62,9 @@ export const projectSteps: IntegrationStep<ADOIntegrationConfig>[] = [
     name: 'Fetch Projects',
     entities: [
       {
-        resourceName: 'ADO Account',
-        _type: 'azure_devops_account',
-        _class: 'Account',
+        resourceName: 'ADO Project',
+        _type: 'azure_devops_project',
+        _class: 'Project',
       },
     ],
     relationships: [

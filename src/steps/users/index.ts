@@ -38,7 +38,7 @@ export async function fetchUsers({
             username: user.identity?.uniqueName,
             webLink: user.identity?.url,
             imageLink: user.identity?.imageUrl,
-            descriptor: user.identity?.descriptor,
+            description: user.identity?.descriptor,
             profileLink: user.identity?.profileUrl,
           },
         },
@@ -74,7 +74,7 @@ export const userSteps: IntegrationStep<ADOIntegrationConfig>[] = [
         targetType: 'azure_devops_user',
       },
     ],
-    dependsOn: ['fetch-projects'],
+    dependsOn: ['fetch-account'],
     executionHandler: fetchUsers,
   },
 ];
