@@ -211,19 +211,26 @@ export class APIClient {
       projects = await core.getProjects();
       const witracker = await connection.getWorkItemTrackingApi();
       for (const project of projects) {
-        //TODO: find the right way to get workitem IDs per project
-        let workItemIds: number[] = [];
-        let currentProjectWorkitems: WorkItem[] = [];
-        if (project.id == 'd5ec9e77-afa6-45c9-a2a5-2e015714f4fa') {
-          workItemIds = [1, 2];
-          currentProjectWorkitems = await witracker.getWorkItems(workItemIds);
-          for (const workitem of currentProjectWorkitems) {
-            const adoWorkItem: ADOWorkItem = workitem;
-            adoWorkItem.projectId = project.id;
-            workitems.push(adoWorkItem);
+        if (project.id != undefined) {
+          const workItemsPerProject = await witracker.readReportingRevisionsGet(
+            project.id,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            false,
+            undefined,
+            true,
+          );
+          if (workItemsPerProject.values != undefined) {
+            for (const workitem of workItemsPerProject.values) {
+              const adoWorkItem: ADOWorkItem = workitem;
+              adoWorkItem.projectId = project.id;
+              workitems.push(adoWorkItem);
+            }
           }
         }
-        // end TODO
       }
     } catch (err) {
       throw new IntegrationProviderAuthenticationError({
