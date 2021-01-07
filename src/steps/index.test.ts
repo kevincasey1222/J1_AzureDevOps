@@ -12,8 +12,7 @@ import { fetchUsers } from './users';
 import { fetchAccountDetails } from './account';
 
 const DEFAULT_ORG_URL = 'https://dev.azure.com/tkcasey1';
-const DEFAULT_ACCESS_TOKEN =
-  'vfpvjk6lggyfu5bcglvenyhfllyitn2toalf33srqdhmgnqdykra';
+const DEFAULT_ACCESS_TOKEN = 'topsecret123'; //fake secret because we have a recording
 
 const integrationConfig: ADOIntegrationConfig = {
   orgUrl: process.env.ORG_URL || DEFAULT_ORG_URL,
@@ -112,6 +111,52 @@ test('should collect data', async () => {
         displayName: { type: 'string' },
         webLink: { type: 'string' },
         projectName: { type: 'string' },
+        _rawData: {
+          type: 'array',
+          items: { type: 'object' },
+        },
+      },
+      required: ['name'],
+    },
+  });
+
+  const projects = context.jobState.collectedEntities.filter((e) =>
+    e._class.includes('Project'),
+  );
+  expect(projects.length).toBeGreaterThan(0);
+  expect(projects).toMatchGraphObjectSchema({
+    _class: ['Project'],
+    schema: {
+      additionalProperties: true,
+      properties: {
+        _type: { const: 'azure_devops_project' },
+        _key: { type: 'string' },
+        name: { type: 'string' },
+        displayName: { type: 'string' },
+        webLink: { type: 'string' },
+        _rawData: {
+          type: 'array',
+          items: { type: 'object' },
+        },
+      },
+      required: ['name'],
+    },
+  });
+
+  const workitems = context.jobState.collectedEntities.filter((e) =>
+    e._class.includes('Record'),
+  );
+  expect(workitems.length).toBeGreaterThan(0);
+  expect(workitems).toMatchGraphObjectSchema({
+    _class: ['Record'],
+    schema: {
+      additionalProperties: true,
+      properties: {
+        _type: { const: 'azure_devops_work_item' },
+        _key: { type: 'string' },
+        name: { type: 'string' },
+        displayName: { type: 'string' },
+        webLink: { type: 'string' },
         _rawData: {
           type: 'array',
           items: { type: 'object' },
