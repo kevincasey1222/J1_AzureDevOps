@@ -108,7 +108,7 @@ export class APIClient {
   public async iterateUsers(
     iteratee: ResourceIteratee<TeamMember>,
   ): Promise<void> {
-    let users: TeamMember[] = [];
+    const users: TeamMember[] = [];
 
     try {
       const authHandler = azdev.getPersonalAccessTokenHandler(
@@ -156,7 +156,7 @@ export class APIClient {
   public async iterateGroups(
     iteratee: ResourceIteratee<ADOGroup>,
   ): Promise<void> {
-    let groups: ADOGroup[] = [];
+    const groups: ADOGroup[] = [];
 
     try {
       const authHandler = azdev.getPersonalAccessTokenHandler(
@@ -199,7 +199,7 @@ export class APIClient {
   public async iterateWorkitems(
     iteratee: ResourceIteratee<ADOWorkItem>,
   ): Promise<void> {
-    let workitems: ADOWorkItem[] = [];
+    const workitems: ADOWorkItem[] = [];
     let projects: TeamProjectReference[] = [];
 
     try {

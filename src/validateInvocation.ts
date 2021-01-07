@@ -22,11 +22,12 @@ export default async function validateInvocation(
   try {
     new URL(config.orgUrl);
   } catch (err) {
-    throw new IntegrationValidationError(
-      'Invalid API URL: ' + config.orgUrl
-    );
+    throw new IntegrationValidationError('Invalid API URL: ' + config.orgUrl);
   }
 
+  if (!/https?:\/\/(dev.azure.com|localhost)/.test(config.orgUrl)) {
+    throw new IntegrationValidationError('Invalid API URL: ' + config.orgUrl);
+  }
 
   const apiClient = createAPIClient(config);
   await apiClient.verifyAuthentication();
