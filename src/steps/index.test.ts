@@ -31,12 +31,6 @@ test('should collect data', async () => {
   await fetchUsers(context);
   await fetchTeams(context);
 
-  console.log(context.jobState.collectedEntities.length);
-  console.log(context.jobState.collectedRelationships.length);
-  console.log(context.jobState.collectedEntities);
-  console.log(context.jobState.collectedRelationships);
-  console.log(context.jobState.encounteredTypes);
-
   // Review snapshot, failure is a regression
   expect({
     numCollectedEntities: context.jobState.collectedEntities.length,
@@ -53,7 +47,7 @@ test('should collect data', async () => {
   expect(accounts).toMatchGraphObjectSchema({
     _class: ['Account'],
     schema: {
-      additionalProperties: false,
+      additionalProperties: true,
       properties: {
         _type: { const: 'azure_devops_account' },
         _key: { type: 'string' },
@@ -64,7 +58,6 @@ test('should collect data', async () => {
     },
   });
 
-  /*
   const users = context.jobState.collectedEntities.filter((e) =>
     e._class.includes('User'),
   );
@@ -72,16 +65,20 @@ test('should collect data', async () => {
   expect(users).toMatchGraphObjectSchema({
     _class: ['User'],
     schema: {
-      additionalProperties: false,
+      additionalProperties: true,
       properties: {
-        _type: { const: 'acme_user' },
-        firstName: { type: 'string' },
+        _type: { const: 'azure_devops_user' },
+        _key: { type: 'string' },
+        name: { type: 'string' },
+        displayName: { type: 'string' },
+        email: { type: 'string' },
+        webLink: { type: 'string' },
         _rawData: {
           type: 'array',
           items: { type: 'object' },
         },
       },
-      required: ['firstName'],
+      required: ['name'],
     },
   });
 
@@ -92,20 +89,20 @@ test('should collect data', async () => {
   expect(userGroups).toMatchGraphObjectSchema({
     _class: ['UserGroup'],
     schema: {
-      additionalProperties: false,
+      additionalProperties: true,
       properties: {
-        _type: { const: 'acme_group' },
-        logoLink: {
-          type: 'string',
-          // Validate that the `logoLink` property has a URL format
-          format: 'url',
-        },
+        _type: { const: 'azure_devops_team' },
+        _key: { type: 'string' },
+        name: { type: 'string' },
+        displayName: { type: 'string' },
+        webLink: { type: 'string' },
+        projectName: { type: 'string' },
         _rawData: {
           type: 'array',
           items: { type: 'object' },
         },
       },
-      required: ['logoLink'],
+      required: ['name'],
     },
-  }); */
+  });
 });
