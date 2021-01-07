@@ -1,5 +1,9 @@
-import { createMockStepExecutionContext } from '@jupiterone/integration-sdk-testing';
+import {
+  createMockStepExecutionContext,
+  Recording,
+} from '@jupiterone/integration-sdk-testing';
 
+import { setupADORecording } from '../../test/recording';
 import { ADOIntegrationConfig } from '../types';
 import { fetchProjects } from './projects';
 import { fetchWorkitems } from './workitems';
@@ -16,9 +20,20 @@ const integrationConfig: ADOIntegrationConfig = {
   accessToken: process.env.ACCESS_TOKEN || DEFAULT_ACCESS_TOKEN,
 };
 
-jest.setTimeout(25000);
+jest.setTimeout(1000 * 60 * 1);
+
+let recording: Recording;
+
+afterEach(async () => {
+  await recording.stop();
+});
 
 test('should collect data', async () => {
+  recording = setupADORecording({
+    directory: __dirname,
+    name: 'steps',
+  });
+
   const context = createMockStepExecutionContext<ADOIntegrationConfig>({
     instanceConfig: integrationConfig,
   });
